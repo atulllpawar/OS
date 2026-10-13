@@ -1,0 +1,203 @@
+#include<stdio.h> 
+#include<stdlib.h> 
+struct proc_info 
+{ 
+int atime; 
+int btime; 
+int priority; 
+} proc[30]; 
+typedef struct rqnode 
+{ 
+int pid; 
+struct rqnode *next; 
+}RQNODE; 
+RQNODE *head=NULL, *temp, *last; 
+struct ganttchart 
+{ 
+int stime; 
+int pid; 
+int etime; 
+} gchart[30]; 
+int i,n,ctime,gi=0,wtime[30],tatime[30],obtime[30]; 
+void getprocs(); 
+void start(); 
+void addprocq(); 
+void dispgchart(); 
+void disptimes(); 
+int getproc_id(); 
+int finished(); 
+int main() 
+{ 
+getprocs(); 
+ctime=0; 
+start(); 
+dispgchart(); 
+disptimes(); 
+return 0; 
+} 
+void getprocs() 
+{ 
+printf("\nEnter No. of Processes : "); 
+scanf("%d",&n); 
+printf("\nPID \tATime \tBTime \tPriority\n"); 
+for(i=1;i<=n;i++) 
+{ 
+printf("%d\t",i); 
+scanf("%d%d%d",&proc[i].atime,&proc[i].btime,&proc[i].priority); 
+obtime[i] = proc[i].btime; 
+} 
+} 
+ 
+void start() 
+{ 
+ int pid; 
+ 
+ addprocq(); 
+ pid=getproc_id(); 
+ 
+ while(finished()) 
+ { 
+  ctime++; 
+  addprocq(); 
+ 
+  if(pid!=-1) 
+  { 
+   proc[pid].btime--; 
+ 
+   if(proc[pid].btime==0) 
+   { 
+    printf("\nProcess %d completed at time %d",pid,ctime); 
+ 
+    tatime[pid]=ctime-proc[pid].atime; 
+    wtime[pid]=tatime[pid]-obtime[pid]; 
+   } 
+  } 
+ 
+  pid=getproc_id(); 
+ } 
+ 
+ gchart[gi].etime=ctime; 
+} 
+ 
+void addprocq() 
+{ 
+ for(i=1;i<=n;i++) 
+ { 
+  if(proc[i].atime==ctime) 
+  { 
+   temp=(RQNODE*) malloc(sizeof(RQNODE)); 
+ 
+   temp->pid=i; 
+   temp->next=NULL; 
+ 
+   if(head==NULL) 
+   { 
+    head=temp; 
+   } 
+   else 
+   { 
+    last->next=temp; 
+   } 
+ 
+   last=temp; 
+  } 
+ } 
+} 
+ 
+int finished() 
+{ 
+ for(i=1;i<=n;i++) 
+ { 
+  if(proc[i].btime!=0) 
+  { 
+   return(1); 
+  } 
+ } 
+ 
+ return(0); 
+} 
+ 
+int getproc_id() 
+{ 
+ int pid=-1,min=9999; 
+ 
+ if(head==NULL) 
+ { 
+  return(-1); 
+ } 
+ 
+ for(temp=head;temp!=NULL;temp=temp->next) 
+ { 
+  if(proc[temp->pid].btime!=0 && proc[temp->pid].priority < min) 
+  { 
+   min=proc[temp->pid].priority; 
+   pid=temp->pid; 
+  } 
+ } 
+ 
+ gchart[++gi].pid=pid; 
+ gchart[gi].stime=ctime; 
+    gchart[gi-1].etime=ctime; 
+ 
+ return(pid); 
+} 
+ 
+void dispgchart() 
+{ 
+ printf("\n"); 
+ 
+ for(i=1;i<=gi;i++) 
+ { 
+  printf("|----"); 
+ } 
+ 
+ printf("|\n"); 
+ 
+ for(i=1;i<=gi;i++) 
+ { 
+  printf("| %d  ",gchart[i].pid); 
+ } 
+ 
+ printf("|\n"); 
+ 
+ for(i=1;i<=gi;i++) 
+ { 
+  printf("|----"); 
+ } 
+ 
+ printf("|\n"); 
+ 
+ for(i=1;i<=gi;i++) 
+ { 
+  printf("%d    ",gchart[i].stime); 
+ } 
+ 
+ printf("%d\n",gchart[gi].etime); 
+} 
+ 
+void disptimes() 
+{ 
+ int sumwt=0,sumtat=0; 
+ 
+ printf("\n **Turnaround Time**\n"); 
+ printf("\nPID \tTAT"); 
+ 
+ for(i=1;i<=n;i++) 
+ { 
+  printf("\n %d \t %d",i,tatime[i]); 
+  sumtat=sumtat+tatime[i]; 
+ } 
+ 
+ printf("\n Average TAT : %.2f\n",(float)sumtat/n); 
+ 
+ printf("\n **Waiting Time**\n"); 
+ printf("\nPID \tWT"); 
+ 
+ for(i=1;i<=n;i++) 
+ { 
+  printf("\n %d \t %d",i,wtime[i]); 
+  sumwt+=wtime[i]; 
+ } 
+ 
+ printf("\n Average WT : %.2f\n",(float)sumwt/n); 
+}
